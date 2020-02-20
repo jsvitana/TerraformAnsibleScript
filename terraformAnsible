@@ -1,0 +1,18 @@
+#!/bin/bash
+
+#Use correct path to terraform file
+terraform apply -auto-approve
+echo "Waiting 30 Seconds for VMs"
+sleep 30
+computer1="$(jq '.modules[0].resources."digitalocean_droplet.clouldComputer".primary.attributes.ipv4_address' terraform.tfstate)"
+computer2="$(jq '.modules[0].resources."digitalocean_droplet.clouldComputer2".primary.attributes.ipv4_address' terraform.tfstate)"
+computer3="$(jq '.modules[0].resources."digitalocean_droplet.clouldComputer3".primary.attributes.ipv4_address' terraform.tfstate)"
+
+echo -e "[servers]\nserver1 ansible_host=$computer1 ansible_ssh_private_key_file=/root/terraformprivkeyhosts.key\nserver2 ansible_host=$computer2 ansible_ssh_private_key_file=/root/terraformprivkeyhosts.key\nserver3 ansible_host=$computer3 ansible_ssh_private_key_file=/root/terraformprivkeyhosts.key\n\n[servers:vars]\nansible_python_interpreter=/usr/bin/python3\n" > /etc/ansible/hosts
+ansible all -a "apt install apache2 -y"
+ansible all -m shell -a "echo '<h1>Terraform Ansible</h1>' > /var/www/html/index.html"
+
+echo "Server 1: $computer1"
+echo "Server 2: $computer2"
+echo "Server 3: $computer3"
+
